@@ -501,15 +501,20 @@ class CargaMasivaAPIView(APIView):
                     # Saltar si falta el RUT o el Monto
                     if not rut or not monto:
                         return Response({
-                            'Error': 'Los campos de rut y monto en el archivo no pueden estar vacios'
+                            'Error': f'Error en la fila {index + 1}: El campo RUT y monto no pueden estar vacios'
                         }, status=status.HTTP_400_BAD_REQUEST)
 
                     try:# Revisar a Detalle 
                         monto_num = float(monto)
-                        if monto_num <= 0: continue
+                        if monto_num <= 0: 
+                            return Response({
+                                'Error': f'Error en la fila {index + 1}: El monto para el RUT: {rut} debe ser mayor que 0 '
+                            }, status=status.HTTP_400_BAD_REQUEST)
                         factor = round(monto_num * 0.0000041, 8) # Cálculo automático
-                    except ValueError:
-                        continue
+                    except(ValueError, TypeError):
+                        return Response({
+                            'error': f'Error en la fila {index + 1}: El monto "{monto}" ingresado para el RUT {rut} no es un número válido.'
+                        }, status=status.HTTP_400_BAD_REQUEST)
 
                     # A. Crear o buscar Empresa
                     empresa, created = Empresa.objects.get_or_create(
